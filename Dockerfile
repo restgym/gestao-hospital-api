@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-ENV API=gestaohospitalar
+ENV API=gestao-hospitalar
 ENV TOOL=${TOOL:-manual}
 ENV RUN=${RUN:-1}
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,18 +29,18 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY apis/gestaohospitalar/gestaohospitalar-0.0.1.jar /api/gestaohospitalar.jar
-COPY apis/gestaohospitalar/classes/ /api/classes/
-COPY apis/gestaohospitalar/database/ /api/database/
-COPY apis/gestaohospitalar/specifications/ /api/specifications/
-COPY apis/gestaohospitalar/auth.py /api/auth.py
-COPY apis/infrastructure/ /infrastructure/
+COPY ./apis/gestao-hospitalar/gestaohospitalar-0.0.1.jar /api/gestaohospitalar.jar
+COPY ./apis/gestao-hospitalar/classes/ /api/classes/
+COPY ./apis/gestao-hospitalar/database/ /api/database/
+COPY ./apis/gestao-hospitalar/specifications/ /api/specifications/
+COPY ./apis/gestao-hospitalar/auth.py /api/auth.py
+COPY ./infrastructure/ /infrastructure/
 
 # Expose ports
 EXPOSE 9090 12345 8080
 
-COPY apis/gestaohospitalar/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+COPY ./apis/gestao-hospitalar/entrypoint.sh /entrypoint.sh
 
-CMD ["/bin/bash", "/start.sh"]
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
