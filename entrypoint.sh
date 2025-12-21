@@ -20,7 +20,7 @@ sh /infrastructure/jacoco/collect-coverage-interval.sh &
 JACOCO_PID=$!
 
 echo "Starting Gestao Hospitalar API in background..."
-java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.7-runtime.jar=includes=*,output=tcpserver,port=12345,address=* -Dfile.encoding=UTF-8 -Dserver.port=8080 -Dspring.data.mongodb.host=localhost -Dspring.data.mongodb.port=27017 -Dspring.data.mongodb.database=HospitalDB -jar /api/gestaohospitalar.jar > /results/$API/$TOOL/$RUN/logs/gestaohospitalar-stdout.log 2> /results/$API/$TOOL/$RUN/logs/gestaohospitalar-stderr.log &
+java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.7-runtime.jar=includes=*,output=tcpserver,port=12345,address=* -Dfile.encoding=UTF-8 -Dserver.port=8080 -Dspring.data.mongodb.host=localhost -Dspring.data.mongodb.port=27017 -Dspring.data.mongodb.database=HospitalDB -jar /api/gestaohospitalar.jar &
 API_PID=$!
 
 echo "Waiting for API to start..."
@@ -37,7 +37,7 @@ for i in {1..60}; do
 done
 
 echo "Starting mitmproxy..."
-mitmdump -p 9090 --mode reverse:http://localhost:8080/ -s /infrastructure/mitmproxy/store-interactions.py -s /api/auth.py > /results/$API/$TOOL/$RUN/logs/mitmproxy.log 2>&1 &
+mitmdump -p 9090 --mode reverse:http://localhost:8080/ -s /infrastructure/mitmproxy/store-interactions.py -s /api/auth.py &
 MITM_PID=$!
 
 echo "Waiting for mitmproxy to start..."
