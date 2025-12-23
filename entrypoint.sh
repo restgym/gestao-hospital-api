@@ -11,7 +11,7 @@ sleep 10
 
 echo "Initializing MongoDB database..."
 if [ -f /api/database/init-mongo.js ]; then
-  mongo HospitalDB /api/database/init-mongo.js || echo "MongoDB initialization completed with warnings"
+  mongosh HospitalDB /api/database/init-mongo.js || echo "MongoDB initialization completed with warnings"
 fi
 
 echo "Starting JaCoCo coverage collector..."
