@@ -13,6 +13,12 @@ technology:
   framework: Spring Boot          # 2.1.3
   database: MongoDB
 
+original_specification:           # Swagger 2.0, served by the API at /v2/api-docs (springfox)
+  version: "2.0"
+  format: json
+  origin: generated
+  created_by: springfox 2.6.1
+
 authentication: none
 
 server_errors:
