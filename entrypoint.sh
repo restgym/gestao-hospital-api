@@ -36,7 +36,7 @@ for i in {1..60}; do
 done
 
 echo "Starting mitmproxy..."
-mitmdump -p 9090 --mode reverse:http://localhost:8080/ -s /infrastructure/mitmproxy/store-interactions.py -s /api/auth.py &
+mitmdump -p 9090 --mode reverse:http://localhost:8080/ -s /infrastructure/mitmproxy/store-interactions.py &
 MITM_PID=$!
 
 echo "Waiting for mitmproxy to start..."

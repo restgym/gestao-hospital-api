@@ -33,7 +33,6 @@ COPY ./apis/gestao-hospital/gestaohospitalar-0.0.1.jar /api/gestaohospitalar.jar
 COPY ./apis/gestao-hospital/classes/ /api/classes/
 COPY ./apis/gestao-hospital/database/ /api/database/
 COPY ./apis/gestao-hospital/specifications/ /api/specifications/
-COPY ./apis/gestao-hospital/auth.py /api/auth.py
 COPY ./infrastructure/ /infrastructure/
 
 # Expose ports

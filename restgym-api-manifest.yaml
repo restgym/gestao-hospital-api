@@ -13,9 +13,13 @@ technology:
   framework: Spring Boot          # 2.1.3
   database: MongoDB
 
-authentication: proxy
+authentication: none
 
 server_errors:
   similarity_threshold: 0.7
   preprocessing:
     - json_fields: {fields: [message]}
+
+# Creating a hospital geocodes its address with the external LocationIQ service (key hard-coded upstream)
+requirements:
+  internet: true
