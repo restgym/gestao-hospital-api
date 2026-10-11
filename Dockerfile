@@ -38,8 +38,7 @@ COPY ./infrastructure/ /infrastructure/
 # Expose ports
 EXPOSE 9090 12345 8080
 
+# Startup script: starts the API, the collection of code coverage and the proxy (see infrastructure/api/restgym-api.sh)
 COPY ./apis/gestao-hospital/entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["bash", "/entrypoint.sh"]
