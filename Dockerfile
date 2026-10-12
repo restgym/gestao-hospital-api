@@ -1,41 +1,18 @@
-FROM ubuntu:22.04
+# Gestão Hospitalar
+# Base image: Ubuntu 22.04, Java 8 (headless JRE), mitmproxy and the RESTgym infrastructure (see infrastructure/api/Dockerfile)
+FROM restgym-api-base:java8
 
-ENV DEBIAN_FRONTEND=noninteractive
+# MongoDB 6.0 (initialized by entrypoint.sh with database/init-mongo.js), from the repository of MongoDB
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl gnupg \
+    && curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-6.0.gpg \
+    && echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-6.0.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends mongodb-org \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /api /infrastructure /results
+# The API: its executable, the classes for code coverage, its specifications and scripts
+COPY ./apis/gestao-hospital/ /api/
 
-# Install required packages including MongoDB
-RUN apt-get update && \
-    apt-get -y upgrade && \
-    apt-get -y install \
-        openjdk-8-jdk \
-        curl \
-        wget \
-        netcat \
-        sqlite3 \
-        python3 \
-        python3-pip \
-        gnupg \
-        ca-certificates && \
-    pip3 install mitmproxy requests && \
-    curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-6.0.gpg && \
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
-    apt-get update && \
-    apt-get -y install mongodb-org && \
-    apt-get -y autoremove && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY ./apis/gestao-hospital/gestaohospitalar-0.0.1.jar /api/gestaohospitalar.jar
-COPY ./apis/gestao-hospital/classes/ /api/classes/
-COPY ./apis/gestao-hospital/database/ /api/database/
-COPY ./apis/gestao-hospital/specifications/ /api/specifications/
-COPY ./infrastructure/ /infrastructure/
-
-# Expose ports
-EXPOSE 9090 12345 8080
-
-# Startup script: starts the API, the collection of code coverage and the proxy (see infrastructure/api/restgym-api.sh)
-COPY ./apis/gestao-hospital/entrypoint.sh /entrypoint.sh
-
-ENTRYPOINT ["bash", "/entrypoint.sh"]
+# Startup script (in /api): starts the API, the collection of code coverage and the proxy (see infrastructure/api/restgym-api.sh)
+ENTRYPOINT ["bash", "/api/entrypoint.sh"]

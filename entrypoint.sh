@@ -12,10 +12,10 @@ if [ -f /api/database/init-mongo.js ]; then
 fi
 
 restgym_run_api 8080 \
-    java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.7-runtime.jar=includes=*,output=tcpserver,port=12345,address=* \
+    java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.12-runtime.jar=includes=*,output=tcpserver,port=12345,address=* \
         -Dfile.encoding=UTF-8 \
         -Dserver.port=8080 \
         -Dspring.data.mongodb.host=localhost \
         -Dspring.data.mongodb.port=27017 \
         -Dspring.data.mongodb.database=HospitalDB \
-        -jar /api/gestaohospitalar.jar
+        -jar /api/gestaohospitalar-0.0.1.jar
