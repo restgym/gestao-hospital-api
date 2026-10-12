@@ -1,6 +1,6 @@
 # Gestão Hospitalar
 # Base image: Ubuntu 22.04, Java 8 (headless JRE), mitmproxy and the RESTgym infrastructure (see infrastructure/api/Dockerfile)
-FROM restgym-api-base:java8
+FROM restgym/api-base:java8
 
 # MongoDB 6.0 (initialized by entrypoint.sh with database/init-mongo.js), from the repository of MongoDB
 RUN apt-get update \
