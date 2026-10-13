@@ -11,6 +11,14 @@ if [ -f /api/database/init-mongo.js ]; then
     mongosh HospitalDB /api/database/init-mongo.js || restgym_log "The initialization of MongoDB completed with warnings."
 fi
 
+# The mock of LocationIQ (see location-iq-mock/README.md): us1.locationiq.com, which the API calls to geocode the address
+# of a new hospital, resolves to the container, where the mock answers on port 443 (HTTPS)
+echo "127.0.0.1 us1.locationiq.com" >> /etc/hosts || restgym_fail "Cannot redirect us1.locationiq.com to the LocationIQ mock."
+restgym_start_service "the LocationIQ mock" python3 /api/location-iq-mock/locationiq_mock.py --port 443 \
+    --cert /api/location-iq-mock/certs/server.pem --key /api/location-iq-mock/certs/server.key \
+    --log "$RESTGYM_RESULTS/logs/location-iq-mock.log"
+restgym_wait_for_port "the LocationIQ mock" 443
+
 restgym_run_api 8080 \
     java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.12-runtime.jar=includes=*,output=tcpserver,port=12345,address=* \
         -Dfile.encoding=UTF-8 \

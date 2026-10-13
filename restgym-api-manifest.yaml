@@ -28,6 +28,7 @@ server_errors:
   preprocessing:
     - json_fields: {fields: [message]}
 
-# Creating a hospital geocodes its address with the external LocationIQ service (key hard-coded upstream)
+# Creating a hospital geocodes its address with LocationIQ: the container runs a mock of it (location-iq-mock/), so the
+# API needs no internet access
 requirements:
-  internet: true
+  internet: false
