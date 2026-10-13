@@ -18,6 +18,8 @@ original_specification:           # Swagger 2.0, served by the API at /v2/api-do
   format: json
   origin: generated
   created_by: springfox 2.6.1
+  file: swagger-original.json
+  source: "runtime: /v2/api-docs"
 
 authentication: none
 
