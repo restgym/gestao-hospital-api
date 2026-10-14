@@ -2,13 +2,17 @@
 # Base image: Ubuntu 22.04, Java 8 (headless JRE), mitmproxy and the RESTgym infrastructure (see infrastructure/api/Dockerfile)
 FROM restgym/api-base:java8
 
-# MongoDB 6.0 (initialized by entrypoint.sh with database/init-mongo.js), from the repository of MongoDB
+# MongoDB 6.0 (initialized by entrypoint.sh with database/init-mongo.js), from the repository of MongoDB. Every package is pinned
+# to its version, since the repository serves all of them and mongodb-org would install the latest otherwise
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl gnupg \
     && curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-6.0.gpg \
     && echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-6.0.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends mongodb-org \
+    && apt-get install -y --no-install-recommends \
+        mongodb-org=6.0.29 mongodb-org-database=6.0.29 mongodb-org-server=6.0.29 mongodb-org-mongos=6.0.29 \
+        mongodb-org-shell=6.0.29 mongodb-org-tools=6.0.29 mongodb-org-database-tools-extra=6.0.29 \
+        mongodb-mongosh=2.13.0 mongodb-database-tools=100.19.1 \
     && rm -rf /var/lib/apt/lists/*
 
 # The API: its executable, the classes for code coverage, its specifications and scripts
