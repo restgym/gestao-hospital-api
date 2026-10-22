@@ -3,13 +3,10 @@
 
 source /infrastructure/api/restgym-api.sh
 
-# MongoDB, initialized with the data of the API at each start
+# MongoDB, empty at each start: the API inserts its own sample data when it starts (Instantiation, in its code)
 mkdir -p /data/db
 mongod --fork --logpath /var/log/mongodb.log --dbpath /data/db || restgym_fail "MongoDB did not start."
 restgym_wait_for_port MongoDB 27017
-if [ -f /api/database/init-mongo.js ]; then
-    mongosh HospitalDB /api/database/init-mongo.js || restgym_log "The initialization of MongoDB completed with warnings."
-fi
 
 # The mock of LocationIQ (see location-iq-mock/README.md): us1.locationiq.com, which the API calls to geocode the address
 # of a new hospital, resolves to the container, where the mock answers on port 443 (HTTPS)

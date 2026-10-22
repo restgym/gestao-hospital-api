@@ -306,12 +306,12 @@
               }
             }
           },
-          "204": {
-            "description": "No Content",
-            "content": {}
-          },
           "401": {
             "description": "Unauthorized",
+            "content": {}
+          },
+          "204": {
+            "description": "No Content",
             "content": {}
           },
           "403": {
@@ -582,12 +582,12 @@
               }
             }
           },
-          "204": {
-            "description": "No Content",
-            "content": {}
-          },
           "401": {
             "description": "Unauthorized",
+            "content": {}
+          },
+          "204": {
+            "description": "No Content",
             "content": {}
           },
           "403": {

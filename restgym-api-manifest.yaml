@@ -11,14 +11,14 @@ repository: https://github.com/ValchanOficial/GestaoHospital    # also included 
 technology:
   language: java
   framework: Spring Boot          # 2.1.3
-  database: MongoDB
+  database: MongoDB               # 6.0, in the container, empty at each start; the API inserts its sample data at startup (Instantiation)
 
 original_specification:           # Swagger 2.0, served by the API at /v2/api-docs (springfox)
   version: "2.0"
   format: json
   origin: generated
   created_by: springfox 2.6.1
-  file: swagger-original.json
+  file: original/gestao-hospital-swagger.json
   source: "runtime: /v2/api-docs"
 
 authentication: none

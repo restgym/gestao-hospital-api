@@ -24,12 +24,14 @@ More details (e.g., how 5XX responses are grouped into unique failures) are in t
 
 | File | Content |
 |---|---|
-| `gestaohospitalar-0.0.1.jar` | The executable of the API. |
-| `classes/` | The classes measured for code coverage: the classes of the packages of the API, as in the executable. |
-| `specifications/gestao-hospital-openapi.json` | The specification given to the tools (OpenAPI 3.0.1). |
-| `specifications/gestao-hospital.yaml` | The specification given to the tools (OpenAPI 3.0.1). |
-| `specifications/swagger-original.json` | The original specification (Swagger 2.0), as served by the API at `/v2/api-docs`, unchanged. |
-| `database/` | `database/init-mongo.js`: the data of the API, loaded into MongoDB at each start of the container. |
+| `gestaohospitalar-0.0.1.jar` | The executable of the API, built from commit `b03cba6` (2019-04, the last commit of the original repository) with two changes (see "Changes made by RESTgym"). |
+| `classes/` | The classes measured for code coverage: the classes of the packages of the API, as in the executable (identical, verified 2026-10). |
+| `specifications/original/gestao-hospital-swagger.json` | The original specification (Swagger 2.0), as served by the API at `/v2/api-docs`, unchanged. |
+| `specifications/standardized/gestao-hospital-swagger.json` | The specification given to the tools (Swagger 2.0): the original, formatted, with `schemes: ["http"]`. |
+| `specifications/standardized/gestao-hospital-swagger.yaml` | The same specification in YAML (converted with yq). |
+| `specifications/standardized/gestao-hospital-openapi.json` | The same specification in OpenAPI 3.0.1 (converted with the Swagger Converter). |
+| `specifications/standardized/gestao-hospital-openapi.yaml` | The OpenAPI 3.0.1 version in YAML (converted with yq). |
+| `specifications/README.md` | Every difference between the specifications, in detail. |
 | `location-iq-mock/` | The mock of LocationIQ that the API calls in the container (see its `README.md`): the server (`locationiq_mock.py`), its data (`data/`, built by `build_data.py`). |
 | `Dockerfile` | The Docker image of the API, built by RESTgym (`./restgym.sh b`). |
 | `entrypoint.sh` | Starts the API (and the services it needs) in the container. |
@@ -37,30 +39,40 @@ More details (e.g., how 5XX responses are grouped into unique failures) are in t
 
 ## How RESTgym runs it
 
-The image starts from the base image of RESTgym for Java 8 (`restgym/api-base:java8`), which contains the proxy and the collection of code coverage. MongoDB runs in the container, and is initialized with `database/init-mongo.js` at each start. Creating a hospital geocodes its address with LocationIQ: `entrypoint.sh` resolves `us1.locationiq.com` to the container (in `/etc/hosts`) and starts a mock of LocationIQ on port 443 (HTTPS, with a certificate signed by a private authority that the Dockerfile adds to the certificates trusted by Java), before the API. The container has no internet access. The mock logs every request in `logs/location-iq-mock.log` of the results of the run. The tools reach the API through the proxy of RESTgym, on port 9090.
+The image starts from the base image of RESTgym for Java 8 (`restgym/api-base:java8`), which contains the proxy and the collection of code coverage. MongoDB 6.0 runs in the container, empty at each start: at its start, the API deletes the data of its collections and inserts its sample data (3 hospitals, 8 patients, 8 products, 11 locations), with its own code (`Instantiation`, a `CommandLineRunner` of the original repository). Creating a hospital geocodes its address with LocationIQ: `entrypoint.sh` resolves `us1.locationiq.com` to the container (in `/etc/hosts`) and starts a mock of LocationIQ on port 443 (HTTPS, with a certificate signed by a private authority that the Dockerfile adds to the certificates trusted by Java), before the API. The container has no internet access. The mock logs every request in `logs/location-iq-mock.log` of the results of the run. The tools reach the API through the proxy of RESTgym, on port 9090.
 
 ## Changes made by RESTgym
 
 ### API
 
-None.
+`gestaohospitalar-0.0.1.jar` was built (2025-11, with Maven 3.6.0 and JDK 19.0.2, on Windows) from commit `b03cba6` of the original repository (2019-04, its last commit, `master`), with two changes. Verified 2026-10 by building that commit with the first change (Maven 3.8.7, JDK 19, `mvn package -DskipTests`): the two jars have the same 177 entries, with the same content except the two changes and what depends on the build (`MANIFEST.MF`, `pom.properties`, and Windows line endings in `pom.xml` and the Postman collection). The `pom.xml` in the jar is the one of the commit (not the one of EMB, the EvoMaster Benchmark, which also includes this API: its copy renames the jar and adds a dependency).
+
+1. **Compilation fix** (`HospitalService.java`): the commit does not compile, since it declares the field `locationService` twice (`variable locationService is already defined`). The second declaration (its annotation and an empty line) was removed: the bytecode of `HospitalService` is identical to that of the commit with only the duplicate removed, except the line numbers (one lower after the removed lines). EMB comments out the same declaration instead.
+2. **MongoDB settings** (`application.properties`): the commit has `spring.data.mongodb.uri=mongodb://localhost:27017/HospitalDB`; the jar has `spring.data.mongodb.host`, `.port` and `.database`, from environment variables (`SPRING_DATA_MONGODB_*`) with the same values as defaults (`localhost`, `27017`, `HospitalDB`). `entrypoint.sh` also sets the same values (`-Dspring.data.mongodb.host=localhost`, ...). The API connects to the same database either way: the change is not needed (the original `uri` points to the MongoDB of the container, and the API starts with it and the settings of `entrypoint.sh` together; checked 2026-10).
 
 ### Specification
 
-The original specification is `swagger-original.json` (Swagger 2.0): the specification that the API serves at `/v2/api-docs` (springfox 2.6.1), saved unchanged from the API running in its RESTgym container (2026-10-13). `gestao-hospital-openapi.json` and `gestao-hospital.yaml`, given to the tools, have the same content: the conversion of the original to OpenAPI 3.0.1, with nothing else changed (the same operations, parameters, request bodies, responses and schemas).
+The original specification is `original/gestao-hospital-swagger.json` (Swagger 2.0): the specification that the API serves at `/v2/api-docs` (springfox 2.6.1), saved unchanged from the API running in its RESTgym container (2026-10). The specification given to the tools is `standardized/gestao-hospital-swagger.json` (Swagger 2.0): the original, formatted, with `schemes: ["http"]` added, since the original does not state the scheme of the API (it already has the server of the API in its container, `host: localhost:8080`, and no base path, `basePath: /`). Its OpenAPI 3 version, `standardized/gestao-hospital-openapi.json`, is converted from it with the official Swagger Converter. All of them pass the official validation. Details in `specifications/README.md`.
 
 ### Integration
 
-- The proxy does not authenticate requests (until 2026-10-11 it tried to register a user before every request, although the API has no authentication).
-- **LocationIQ is replaced by a mock** (since 2026-10-13), without changing the API: the real service rate-limits the key hard-coded in the API (shared by all the runs: 429 for most of the calls to LocationIQ in the runs of October 2026, and results that depended on the service). The mock answers like LocationIQ (same bodies, status codes and headers, as observed on 2026-10-13), with the per-second limit of the developer plan (20 requests per second; 429 `Rate Limited Second` beyond it) and the latency of a service over the internet (10 ms plus 0-2 ms), but it is stricter on addresses: it geocodes only an address that names a known city (and, with a street, up to two other parts such as the neighborhood), while LocationIQ also geocodes text such as `{{7*7}}`. When LocationIQ (or the mock) does not answer 200, the API answers 400 with an empty body (`HospitalResource.insert` handles the error). See `location-iq-mock/README.md`.
+- MongoDB in the container (6.0; the original repository gives no version), empty at each start, with the sample data of the API (see "How RESTgym runs it"). Until 2026-10, `database/init-mongo.js`, a script of the integration (not of the original repository, which has no data script), ran at each start before the API: it inserted 3 hospitals, 3 patients, 4 products and 3 locations, but in collections that the API does not use (`hospitals`, `patients`, `products`, `locations`, while the API uses `hospital_collection`, `patient_collection`, `product_collection`, `location_collection`), so the API never saw them (verified at runtime). It was removed: the data of the runs is the same as before, the sample data of the API.
+- The proxy does not authenticate requests (until 2026-10 it tried to register a user before every request, although the API has no authentication).
+- **LocationIQ is replaced by a mock** (since 2026-10), without changing the API: the real service rate-limits the key hard-coded in the API (shared by all the runs: 429 for most of the calls to LocationIQ in the runs of October 2026, and results that depended on the service). The mock answers like LocationIQ (same bodies, status codes and headers, as observed in 2026-10), with the per-second limit of the developer plan (20 requests per second; 429 `Rate Limited Second` beyond it) and the latency of a service over the internet (10 ms plus 0-2 ms), but it is stricter on addresses: it geocodes only an address that names a known city (and, with a street, up to two other parts such as the neighborhood), while LocationIQ also geocodes text such as `{{7*7}}`. When LocationIQ (or the mock) does not answer 200, the API answers 400 with an empty body (`HospitalResource.insert` handles the error). See `location-iq-mock/README.md`.
 
 ## Endpoints that may interfere with authentication
 
-RESTgym handles the authentication of the requests, and the tools are not aware of it: an endpoint that ends or changes the session of RESTgym (e.g., logout, login as another user, change or deletion of the user of the proxy, of its password or of its roles) may make the tools fail for the rest of the run. Such endpoints may be removed from the specifications given to the tools.
+RESTgym handles the authentication of the requests, and the tools are not aware of it: an endpoint that ends or changes the session of RESTgym (e.g., logout, login as another user, change or deletion of the user of the proxy, of its password or of its roles) may make the tools fail for the rest of the run. The proxy blocks the requests that would end its session (`471 Blocked by RESTgym`), instead of removing the endpoints from the specifications given to the tools.
 
 None: RESTgym does not authenticate the requests to this API (it needs no authentication), so no endpoint can end or change a session of RESTgym.
 
+## External services (verified 2026-10)
+
+LocationIQ only, replaced by the mock in the container: the API uses only the MongoDB of its container and the mock.
+
+- **Code:** the only network client of the API is `LocationIQService` (`HttpURLConnection` to `https://us1.locationiq.com/v1/search.php`), reached only from `POST /v1/hospitais/` (`HospitalResource.insert` → `HospitalService.insert` → `LocationService.insertLocationByHospital`): it geocodes the address of every new hospital, and replaces the coordinates of the request with those of the answer. The sample data inserted at startup does not use it. Its other URLs are `http://localhost:4200`, an origin allowed by CORS (`@CrossOrigin`), not a connection. None of its 58 libraries is a client of outside services, and its configuration has only the MongoDB settings. The mock opens no connection (it only serves requests).
+- **Runtime**, on the image built from the current files of this repository, with a capture of all the traffic of the container except the requests to the proxy and the loopback: the container runs only the proxy, the API, MongoDB and the mock; no packet during the startup and 150 seconds idle, nor during requests to all the 20 operations of the standardized specification, nor while creating hospitals: with a plausible address (the mock answered 200 and the API saved its coordinates), and with an implausible one (the mock answered 404, the API 400). Java resolves `us1.locationiq.com` to `127.0.0.1` only (`/etc/hosts`); the entry has no IPv6 address, so only a lookup of IPv6 addresses alone (not made by the API) would ask DNS.
+
 ## To verify
 
-- Where `gestaohospitalar-0.0.1.jar` was built from (the original repository or EMB), and whether its source was changed.
 - Who converted the specification served by the API (Swagger 2.0) to OpenAPI 3.0.1.

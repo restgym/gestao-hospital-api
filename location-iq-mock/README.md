@@ -10,7 +10,7 @@ Gestão Hospitalar geocodes the address of every new hospital (`POST /v1/hospita
 
 ## What it answers
 
-As LocationIQ answered on 2026-10-13 (checked with the key of the API: bodies, status codes and headers `Content-Type: application/json; charset=UTF-8`, `Server: cloudflare`, `X-Powered-By: LocationIQ`, `Access-Control-Allow-Origin: *`), in this order:
+As LocationIQ answered in 2026-10 (checked with the key of the API: bodies, status codes and headers `Content-Type: application/json; charset=UTF-8`, `Server: cloudflare`, `X-Powered-By: LocationIQ`, `Access-Control-Allow-Origin: *`), in this order:
 
 | Request | Status | Body |
 |---|---|---|
@@ -23,7 +23,7 @@ As LocationIQ answered on 2026-10-13 (checked with the key of the API: bodies, s
 | Address not plausible (see below) | 404 | `{"error":"Unable to geocode"}` |
 | Plausible address | 200 | A JSON array of places (see below) |
 
-- **Rate limit**: the per-second limit of the developer plan of LocationIQ, 20 requests per second (sliding window; checked on the pricing page of LocationIQ, 2026-10-13). The plan has no per-minute limit; its daily limit (25,000 requests) is not simulated.
+- **Rate limit**: the per-second limit of the developer plan of LocationIQ, 20 requests per second (sliding window; checked on the pricing page of LocationIQ, 2026-10). The plan has no per-minute limit; its daily limit (25,000 requests) is not simulated.
 - **Latency**: every response is sent after 10 ms plus a random jitter between 0 and 2 ms, as by a service over the internet.
 - **Places**: with a street, one place at street level, in the format of LocationIQ for addresses (`place_id`, `licence`, `lat`, `lon`, `display_name`, `boundingbox`, `importance: 0.25`, without `osm_type`, `osm_id`, `class`, `type`); without a street, up to 10 places at city level (cities with the name, the most populous first), in the format of LocationIQ for administrative boundaries (with `osm_type: relation`, `class: boundary`, `type: administrative`). As LocationIQ, the JSON is ASCII with escaped slashes (`https:\/\/locationiq.com\/attribution`), and coordinates are strings. The coordinates of a city are those of GeoNames; those of an address are near its city, at a distance and direction derived from the street and the number: the same address always gets the same coordinates.
 
