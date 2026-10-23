@@ -23,10 +23,15 @@ original_specification:           # Swagger 2.0, served by the API at /v2/api-do
 
 authentication: none
 
+# 5XX responses are the default error of Spring with its message: the message is kept, with the values of the request
+# in it replaced (the value of an extra field in a query of MongoDB, an input string) and numbers masked
 server_errors:
   similarity_threshold: 0.7
   preprocessing:
     - json_fields: {fields: [message]}
+    - replace: {pattern: '(Extra field found: [^:'']+:) [^'']*', with: '\1 <value>'}
+    - replace: {pattern: '(?s)For input string: .*', with: 'For input string: <value>'}
+    - mask: [numbers]
 
 # Creating a hospital geocodes its address with LocationIQ: the container runs a mock of it (location-iq-mock/), so the
 # API needs no internet access
