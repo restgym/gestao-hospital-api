@@ -31,6 +31,10 @@ More details (e.g., how 5XX responses are grouped into unique failures) are in t
 | `specifications/standardized/gestao-hospital-swagger.yaml` | The same specification in YAML (converted with yq). |
 | `specifications/standardized/gestao-hospital-openapi.json` | The same specification in OpenAPI 3.0.1 (converted with the Swagger Converter). |
 | `specifications/standardized/gestao-hospital-openapi.yaml` | The OpenAPI 3.0.1 version in YAML (converted with yq). |
+| `specifications/corrected/gestao-hospital-swagger.json` | The standardized specification (Swagger 2.0) with the fixes that make it match the implementation (fields read only or required, the plain-text body of the check-out, media types and response codes). |
+| `specifications/corrected/gestao-hospital-swagger.yaml` | The same specification in YAML (converted with yq). |
+| `specifications/corrected/gestao-hospital-openapi.json` | The same specification in OpenAPI 3.0.1 (converted with the Swagger Converter). |
+| `specifications/corrected/gestao-hospital-openapi.yaml` | The OpenAPI 3.0.1 version in YAML (converted with yq). |
 | `specifications/README.md` | Every difference between the specifications, in detail. |
 | `location-iq-mock/` | The mock of LocationIQ that the API calls in the container (see its `README.md`): the server (`locationiq_mock.py`), its data (`data/`, built by `build_data.py`). |
 | `Dockerfile` | The Docker image of the API, built by RESTgym (`./restgym.sh b`). |
@@ -53,6 +57,8 @@ The image starts from the base image of RESTgym for Java 8 (`restgym/api-base:ja
 ### Specification
 
 The original specification is `original/gestao-hospital-swagger.json` (Swagger 2.0): the specification that the API serves at `/v2/api-docs` (springfox 2.6.1), saved unchanged from the API running in its RESTgym container (2026-10). The specification given to the tools is `standardized/gestao-hospital-swagger.json` (Swagger 2.0): the original, formatted, with `schemes: ["http"]` added, since the original does not state the scheme of the API (it already has the server of the API in its container, `host: localhost:8080`, and no base path, `basePath: /`). Its OpenAPI 3 version, `standardized/gestao-hospital-openapi.json`, is converted from it with the official Swagger Converter. All of them pass the official validation. Details in `specifications/README.md`.
+
+The corrected specification, `corrected/gestao-hospital-swagger.json`, is the standardized one with the fixes that make it match the implementation of commit `b03cba6` (found in its code and verified at runtime, 2026-10): `id`, `latitude` and `longitude` of `HospitalDTO` read only (an `id` in the body of `POST /v1/hospitais/` makes it fail with 400), `name` and `address` required and not empty, `beds` and `availableBeds` not negative, `id` of `ProductDTO` and `active`, `entryDate` and `exitDate` of `Patient` read only, the body of the check-out as plain text (the id of the patient, not a JSON string), the media types of the responses (`application/json`, or `text/plain` for the 3 operations that answer a text), and the response codes of each operation (no 201, 204, 401 or 403; the 400 and 404 that the API answers). It is not given to the tools by default. Details in `specifications/README.md`.
 
 ### Integration
 

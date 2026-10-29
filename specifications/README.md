@@ -21,7 +21,57 @@ The official validation passes: `standardized/validation.json` (2026-10, swagger
 
 ## Corrected specification
 
-None yet: there is no corrected specification.
+`corrected/gestao-hospital-swagger.json` (Swagger 2.0): the standardized specification with the changes below, which make it match the implementation of the version packaged (commit `b03cba6` of the original repository, with the two changes of RESTgym, see the README of the API). The two files are identical except these changes: the same paths and operations, in the same order, and the same definitions. `corrected/gestao-hospital-swagger.yaml` is the same specification in YAML, converted with yq 4.44.3 (the same content and order of properties, read as YAML 1.2 and as YAML 1.1, checked; see §6.4 of `docs/API-INTEGRATION-PROTOCOL.md` in RESTgym). The OpenAPI 3 version is converted from it (see below). Each change was found in the source code of commit `b03cba6` and verified at runtime (2026-10, in the RESTgym container of the API, through the proxy), unless stated otherwise.
+
+Changes from the standardized specification:
+
+- **`HospitalDTO`: `id`, `latitude` and `longitude` are read only** (`readOnly: true`): they are in the responses, and should not be sent.
+  - **`id`**: `POST /v1/hospitais/` (`HospitalResource.insert`) passes the body to `HospitalService.fromDTO`, which looks up the hospital of the `id` when there is one: an unknown `id` throws `ObjectNotFoundException`, and the `id` of an existing hospital makes the insert fail on its duplicate key; either way the controller answers 400 with an empty body. Verified: the same body answers 400 with `"id": "2"` (an existing hospital) and with `"id": "99"` (none), and 200 without `id`. In `PUT /v1/hospitais/{hospital_id}`, an `id` in the body replaces the data of the body with those of the hospital of that `id` (verified: with `"id": "3"`, the hospital of the path got the name and address of hospital 3), and an unknown `id` answers 400; the hospital updated is always that of the path.
+  - **`latitude` and `longitude`**: the API computes them by geocoding the address (`LocationService.insertLocationByHospital`), and ignores those of the body (verified: `"latitude": "1.5", "longitude": "2.5"` stored as `-23.559578` and `-46.70584`, the coordinates of the address).
+- **`HospitalDTO`: `name` and `address` are required and not empty, `beds` and `availableBeds` not negative** (`required: [address, name]`, `minLength: 1`, `minimum: 0`).
+  - **Why**: `HospitalResource.insert` and `.update` check `obj.getName().equals("") || obj.getAddress().equals("") || obj.getBeds() < 0 || obj.getAvailableBeds() < 0` (an absent name or address throws `NullPointerException`), and answer 400. Verified on `POST /v1/hospitais/`: without `name`, with `"name": ""`, without `address`, and with `"beds": -1`, 400; without `beds` and `availableBeds`, 200 (both 0).
+  - Not expressed by the specification: the address must also be found by the geocoding service (LocationIQ, a mock in RESTgym), otherwise 400 (verified: `"address": "test87442"`).
+- **`ProductDTO`: `id` is read only** (`readOnly: true`): `ProductService.fromDTO` ignores it on `POST .../estoque` (a new id is created; verified: `"id": "abc"` gave a new id), and `ProductResource.update` replaces it with the `produto_id` of the path on `PUT .../estoque/{produto_id}`.
+- **`Patient`: `active`, `entryDate` and `exitDate` are read only** (`readOnly: true`): the check-in sets them (`HospitalService.checkIn`), and `PUT .../pacientes/{patientId}` updates only `name`, `cpf`, `birthDate` and `gender` (`PatientResource.updatePatient`). Verified: a check-in with `"entryDate": "2000-01-01..."`, `"exitDate": "2000-01-02..."` and `"active": false` stored the current time and `true`; a `PUT` with `entryDate` and `active` left them unchanged.
+- **The body of `POST .../pacientes/checkout` is plain text**: `consumes: [text/plain]` instead of `application/json` (the body is still the id of the patient, a string).
+  - **Why**: `PatientResource.checkoutPacient` reads it as `@RequestBody String idPatient`, the raw text of the body, so a JSON string keeps its quotes and matches no patient. Verified: the id as a JSON string (`"6ae3..."`, with quotes) answers 404, and the same id as plain text 200.
+- **The media types of the responses**: `produces: [application/json]` for 17 operations, and `produces: [text/plain]` for the 3 that answer a text (`DELETE /v1/hospitais/{hospital_id}`, `DELETE .../estoque/{produto_id}`, `POST .../transferencia/{productId}`), instead of `*/*` (the 2 operations of the check-in and the check-out already had `application/json`).
+  - **Why**: the controllers return objects, written as JSON, except those 3, which return a `String` (e.g., `Hospital apagado id: ...`, `transferencia não pode ser feita!`). Verified: each operation answered with the media type written.
+- **The response codes of each operation**, as the API answers them: 201, 204, 401 and 403 removed from all the operations (springfox writes them by default: the API has no authentication, and answers 200 to every success), 404 removed where it cannot be answered, and 400 and 404 added where they can (the bodies of these responses are empty, or the error body of Spring, and are not described):
+
+  | Operation | Standardized | Corrected |
+  |---|---|---|
+  | `GET /v1/hospitais/` | 200, 401, 403, 404 | 200 |
+  | `POST /v1/hospitais/` | 200, 201, 401, 403, 404 | 200, 400 |
+  | `GET /v1/hospitais/maisProximo` | 200, 401, 403, 404 | 200, 400, 404 |
+  | `GET /v1/hospitais/{hospital_id}` | 200, 401, 403, 404 | 200, 404 |
+  | `PUT /v1/hospitais/{hospital_id}` | 200, 201, 401, 403, 404 | 200, 400 |
+  | `DELETE /v1/hospitais/{hospital_id}` | 200, 401, 204, 403 | 200, 400 |
+  | `GET .../estoque` | 200, 401, 403, 404 | 200, 400 |
+  | `POST .../estoque` | 200, 201, 401, 403, 404 | 200, 400 |
+  | `GET .../estoque/{produto_id}` | 200, 401, 403, 404 | 200, 404 |
+  | `PUT .../estoque/{produto_id}` | 200, 201, 401, 403, 404 | 200, 400 |
+  | `DELETE .../estoque/{produto_id}` | 200, 401, 204, 403 | 200, 400 |
+  | `GET .../hospitaisProximos` | 200, 401, 403, 404 | 200, 400 |
+  | `GET .../pacientes` | 200, 401, 403, 404 | 200, 404 |
+  | `POST .../pacientes/checkin` | 200, 201, 401, 403, 404 | 200, 400, 404 |
+  | `POST .../pacientes/checkout` | 200, 201, 401, 403, 404 | 200, 404 |
+  | `GET .../pacientes/{patientId}` | 200, 401, 403, 404 | 200, 404 |
+  | `PUT .../pacientes/{patientId}` | 200, 201, 401, 403, 404 | 200, 400, 404 |
+  | `GET .../proximidades` | 200, 401, 403, 404 | 200, 400 |
+  | `GET /v1/hospitais/{id}/leitos` | 200, 401, 403, 404 | 200, 400 |
+  | `POST /v1/hospitais/{id}/transferencia/{productId}` | 200, 201, 401, 403, 404 | 200, 400, 404 |
+
+  - **Why**: most controllers catch every exception and answer either 400 or 404 (each method always the same one: e.g., `HospitalResource.findById` 404, `.deleteById` 400, `ProductResource.findProductBy` 404, `.update` 400, all of `PatientResource` 404); the others (`leitos`, `maisProximo`, `transferencia`) let the exceptions of the API reach Spring, which answers the status of their `@ResponseStatus` (`ObjectNotFoundException` 400, `ResourceNotFoundException` 404); and Spring answers 400 to a missing query parameter (`maisProximo`, `hospitaisProximos`) or a body that is not valid JSON (all the operations with a JSON body; that is the only 400 of `checkin` and of `PUT .../pacientes/{patientId}`). Verified, for each operation, with an unknown id (e.g., `GET /v1/hospitais/zzz` 404, `DELETE /v1/hospitais/zzz` 400, `GET .../zzz/leitos` 400) and with a valid request (200), except the 404 of `transferencia` (no hospital near the destination has the product), which comes from the code (`HospitalService.findHospitalProximoComEstoque`).
+
+Not changed, though they do not describe the API exactly:
+
+- `GET /v1/hospitais/maisProximo` uses `lat` as the longitude and `lon` as the latitude (`HospitalService.findHospitalMaisProximoComVagas` passes them to `LocationService.findHospitalNearLocationBy(longitude, latitude, distance)` in this order): a bug of the API, not of the specification (verified: the hospitals of São Paulo are found with `lat=-46.70&lon=-23.56`, not with `lat=-23.56&lon=-46.70`).
+- The 500 that some requests get (e.g., a numeric parameter that is not a number) are not documented responses.
+
+**OpenAPI 3 version** (`corrected/gestao-hospital-openapi.json`, and `corrected/gestao-hospital-openapi.yaml`, the same in YAML): converted from `corrected/gestao-hospital-swagger.json` with the official Swagger Converter, as the standardized one (swagger-converter 1.0.5, `POST /api/convert`); its output, minified, is only indented with yq 4.44.3, and its YAML version is converted with yq. Checked against the Swagger 2.0 version: the same 20 operations, with the same parameters (name, location, required), request bodies (with the media type of `consumes`) and response codes (with the media types of `produces`), and the same 6 schemas, in the same order; it passes the official validation.
+
+The official validation passes: `corrected/validation.json` (2026-10, swagger-validator-v2 2.1.9) has no messages.
 
 ## Endpoints of the original that may interfere with authentication
 
