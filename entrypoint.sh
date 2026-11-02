@@ -17,7 +17,7 @@ restgym_start_service "the LocationIQ mock" python3 /api/location-iq-mock/locati
 restgym_wait_for_port "the LocationIQ mock" 443
 
 restgym_run_api 8080 \
-    java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.12-runtime.jar=includes=*,output=tcpserver,port=12345,address=* \
+    java -javaagent:/infrastructure/jacoco/org.jacoco.agent-0.8.12-runtime.jar=includes=*,output=tcpserver,port=12345,address=127.0.0.1 \
         -Dfile.encoding=UTF-8 \
         -Dserver.port=8080 \
         -Dspring.data.mongodb.host=localhost \
