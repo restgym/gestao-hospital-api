@@ -24,14 +24,20 @@ original_specification:           # Swagger 2.0, served by the API at /v2/api-do
 authentication: none
 
 # 5XX responses are the default error of Spring with its message: the message is kept, with the values of the request
-# in it replaced (the value of an extra field in a query of MongoDB, an input string) and numbers masked
+# in it replaced (the value of an extra field in a query of MongoDB, an input string, the string of an invalid BSON
+# cstring) and numbers masked; the HTML page of Spring (Whitelabel Error Page) is reduced to the same message
+# Threshold: just above the highest similarity between two different failures in the runs of rest-league-2027-official,
+# 0.615 (an invalid regular expression or a negative $maxDistance in a query of MongoDB)
 server_errors:
-  similarity_threshold: 0.7
+  similarity_threshold: 0.62
   preprocessing:
     - json_fields: {fields: [message]}
     - replace: {pattern: '(Extra field found: [^:'']+:) [^'']*', with: '\1 <value>'}
     - replace: {pattern: '(?s)For input string: .*', with: 'For input string: <value>'}
     - mask: [numbers]
+    - replace: {pattern: '(?s)^<html><body><h1>Whitelabel Error Page</h1>.*?status=<number>\)\.</div><div>(.*)</div></body></html>$', with: '\1'}
+    - replace: {pattern: '&#<number>;', with: ''''}
+    - replace: {pattern: '(?s)(BSON cstring) ''.*?'' (is not valid)', with: '\1 <value> \2'}
 
 # Creating a hospital geocodes its address with LocationIQ: the container runs a mock of it (location-iq-mock/), so the
 # API needs no internet access
